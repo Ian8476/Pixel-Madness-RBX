@@ -1,0 +1,46 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  quality:
+    name: Formato, lint, tests y build
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Instalar toolchain (rokit.toml)
+        uses: CompeyDev/setup-rokit@v0.1.2
+        with:
+          cache: true
+
+      - name: Instalar dependencias Wally
+        run: wally install
+
+      # Falla si alguien commiteo sin formatear. No se discute estilo en los PRs.
+      - name: Verificar formato
+        run: stylua --check src tests
+
+      # roblox.toml es generado, no versionado: se regenera aqui contra la API actual.
+      - name: Lint
+        run: |
+          selene generate-roblox-std
+          selene src
+
+      # Los modulos de Shared/Logic y Constants no dependen de Roblox: corren headless.
+      - name: Tests de logica pura
+        run: lune run tests/run
+
+      - name: Build del place
+        run: rojo build default.project.json --output PixelMadness.rbxl
+
+      - name: Publicar artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: place-${{ github.sha }}
+          path: PixelMadness.rbxl
+          retention-days: 14
