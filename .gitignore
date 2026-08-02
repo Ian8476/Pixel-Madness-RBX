@@ -1,0 +1,18 @@
+# Dependencias resueltas por Wally
+/Packages/
+/ServerPackages/
+/DevPackages/
+
+# Artefactos de build
+*.rbxl
+*.rbxlx
+*.rbxl.lock
+*.rbxlx.lock
+
+# Generados por herramientas
+sourcemap.json
+roblox.toml
+
+# Sistema / editor
+.DS_Store
+.vscode/settings.json

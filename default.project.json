@@ -1,0 +1,24 @@
+{
+	"name": "PixelMadness",
+	"emitLegacyScripts": false,
+	"globIgnorePaths": ["**/*.spec.luau"],
+	"tree": {
+		"$className": "DataModel",
+
+		"ReplicatedStorage": {
+			"Shared": { "$path": "src/shared" },
+			"Packages": { "$path": { "optional": "Packages" } }
+		},
+
+		"ServerScriptService": {
+			"Server": { "$path": "src/server" },
+			"ServerPackages": { "$path": { "optional": "ServerPackages" } }
+		},
+
+		"StarterPlayer": {
+			"StarterPlayerScripts": {
+				"Client": { "$path": "src/client" }
+			}
+		}
+	}
+}

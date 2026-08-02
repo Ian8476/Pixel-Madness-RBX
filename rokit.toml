@@ -1,0 +1,11 @@
+# Toolchain fijado por repo. Regla del proyecto: se actualiza de forma DELIBERADA,
+# nunca "porque salio una version nueva a mitad de sprint".
+#
+# Rojo 7.7.0 verificado (julio 2026). El resto son puntos de partida: corre
+# `scripts/pin-toolchain.sh` una vez para que Rokit resuelva las ultimas y commitea el diff.
+[tools]
+rojo = "rojo-rbx/rojo@7.7.0"
+wally = "UpliftGames/wally@0.3.2"
+stylua = "JohnnyMorganz/StyLua@2.0.2"
+selene = "Kampfkarren/selene@0.27.1"
+lune = "lune-org/lune@0.8.9"

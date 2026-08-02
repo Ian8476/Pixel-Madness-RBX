@@ -1,0 +1,23 @@
+[package]
+name = "pixelmadness/game"
+version = "0.2.0"
+registry = "https://github.com/UpliftGames/wally-index"
+realm = "shared"
+exclude = ["**"]
+
+[dependencies]
+# Vacio a proposito. Signal se saco en la Fase 1: la version de Wally expone
+# `Fire(...: any)` y perder el tipado en la columna vertebral de eventos vaciaba
+# de sentido el `--!strict` obligatorio. Ver src/shared/Signal.luau.
+# Consecuencia practica: hoy `wally install` no es necesario para correr el proyecto.
+
+[server-dependencies]
+# ProfileStore entra en Fase 7 (persistencia). No se agrega antes: dependencia sin uso es ruido.
+# ProfileStore = "<scope>/profilestore@<version>"   # confirmar con `wally search profilestore`
+
+[dev-dependencies]
+# Los tests de Shared/Logic corren en Lune sin dependencias externas.
+
+[place]
+shared-packages = "game.ReplicatedStorage.Packages"
+server-packages = "game.ServerScriptService.ServerPackages"

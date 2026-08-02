@@ -1,0 +1,5 @@
+std = "roblox"
+
+[lints]
+# El proyecto usa tablas mixtas en definiciones de datos de forma intencional.
+mixed_table = "allow"

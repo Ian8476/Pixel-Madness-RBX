@@ -1,0 +1,8 @@
+* text=auto eol=lf
+*.luau text eol=lf
+*.json text eol=lf
+*.toml text eol=lf
+
+# Los prefabs exportados son XML enorme: versionables pero no diffeables a mano.
+*.rbxmx -diff
+*.rbxm binary
