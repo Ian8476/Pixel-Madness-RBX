@@ -55,7 +55,7 @@ Si en tu maquina solo hay Studio, no hace falta Lune para ver los tests en verde
 pwsh scripts/bundle-tests.ps1
 ```
 
-Genera `build/tests-bundle.luau`: se copia entero y se pega en la **barra de comandos de Studio**, y el reporte sale en el Output. Empaqueta exactamente el mismo alcance que Lune (`Constants`, `Shared/Logic/**`, `Shared/Data/**` y las specs), porque es el alcance que la regla de esas carpetas garantiza. **El CI sigue usando Lune**: esto es la salida de emergencia, no la fuente de verdad.
+Genera `build/tests-bundle.luau`: se copia entero y se pega en la **barra de comandos de Studio**, y el reporte sale en el Output. Empaqueta exactamente el mismo alcance que Lune (`Constants`, `Shared/Logic/**`, `Shared/Data/**` y las specs), porque es el alcance que la regla de esas carpetas garantiza. Con la toolchain instalada, `lune run tests/run` sigue siendo el camino principal: esto es la salida de emergencia.
 
 ---
 
@@ -73,13 +73,13 @@ Genera `build/tests-bundle.luau`: se copia entero y se pega en la **barra de com
 
 `src/shared/Constants.luau` y todo `src/shared/Logic/**` **no hacen `require` de nada y no tocan la API de Roblox**.
 
-Esa restriccion es lo que permite que el mismo archivo corra en Lune (CI, sin Studio) y en Roblox sin traduccion ni darklua. Si un modulo de `Logic/` necesita configuracion, se le **inyecta como parametro** (ver `DifficultyMath.DEFAULT_TUNING`), no se importa.
+Esa restriccion es lo que permite que el mismo archivo corra en Lune (sin Studio) y en Roblox sin traduccion ni darklua. Si un modulo de `Logic/` necesita configuracion, se le **inyecta como parametro** (ver `DifficultyMath.DEFAULT_TUNING`), no se importa.
 
 Aqui va toda la logica testeable con TDD: `DifficultyMath`, `SpreadMath`, `ContentSchema`, `Rng` y `DungeonLayout`.
 
 Corolario que se aplico en la Fase 3: **el azar tambien se inyecta.** `DungeonLayout` no importa `Rng`, recibe una funcion `nextInteger`. Y `Rng` es propio en vez de `Random.new(seed)` porque `Random` es un datatype de Roblox: no corre en Lune, y su algoritmo no es nuestro (si Roblox lo cambia, la misma semilla deja de dar la misma mazmorra).
 
-**La misma regla se extiende a `src/shared/Data/**`** (Fase 2): los modulos de datos no hacen `require` y no usan datatypes de Roblox (por eso los colores son `{r, g, b}` y no `Color3`). Gracias a eso el CI valida el contenido REAL contra su esquema, no una copia de fixtures. Los `init.luau` de cada carpeta si usan la API de Roblox: son registros, no datos.
+**La misma regla se extiende a `src/shared/Data/**`** (Fase 2): los modulos de datos no hacen `require` y no usan datatypes de Roblox (por eso los colores son `{r, g, b}` y no `Color3`). Gracias a eso los tests validan el contenido REAL contra su esquema, no una copia de fixtures. Los `init.luau` de cada carpeta si usan la API de Roblox: son registros, no datos.
 
 ---
 
@@ -119,7 +119,7 @@ src/
     ServiceLoader.luau      arranque en dos fases (lo usan ambos bootstraps)
     Logger.luau
     Data/                   contenido: Weapons/ (6), Characters/ (3), Enemies/ (3)
-    Logic/                  logica pura, testeable en CI (DifficultyMath, SpreadMath,
+    Logic/                  logica pura, testeable en Lune (DifficultyMath, SpreadMath,
                             ContentSchema, Rng, DungeonLayout, EnemyTactics, LobbyRules)
 tests/
   Runner.luau             framework minimo describe/it/expect
@@ -133,7 +133,7 @@ Lo que **no** vive en el repo todavia y es propiedad del place (Studio): `Server
 
 ## Convenciones de colaboracion
 
-- Codigo por PR. CI verde obligatorio (formato + lint + tests + build).
+- Codigo por PR. No hay CI: antes de abrir el PR se corren a mano los tests (`lune run tests/run` o `scripts/bundle-tests.ps1`) y, si la toolchain esta instalada, `stylua` y `selene`.
 - **Todo PR actualiza `CHANGELOG.md`** bajo `[Sin publicar]`. Critico para los cambios de place: la configuracion del `.rbxl` no esta en Git, asi que el changelog es su unico registro.
 - Nunca dos personas editando el mismo Model o prefab a la vez.
 - El toolchain se actualiza corriendo `scripts/pin-toolchain.sh` de forma deliberada, nunca a mitad de sprint.

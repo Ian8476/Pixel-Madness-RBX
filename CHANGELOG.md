@@ -23,6 +23,16 @@ Convenciones:
 
 Fase 6 — Co-op real.
 
+### Eliminado el CI de GitHub Actions
+
+**Eliminado**
+
+- `.github/workflows/ci.yml` — el workflow (formato, lint, tests con Lune y build del place) fallaba siempre en el primer paso porque el codigo nunca se paso por StyLua, asi que los tests y el build no llegaban a correr y el check rojo no informaba nada. Decision del equipo: sacarlo en vez de mantenerlo en rojo.
+
+**Decisiones**
+
+- **Sin CI, los tests se corren a mano antes de cada PR** (`lune run tests/run` o `scripts/bundle-tests.ps1` en Studio). Precio: nada impide mergear codigo que rompe los tests o que no compila con Rojo. Reevaluar cuando la toolchain este instalada: formatear todo con StyLua una vez y restaurar el workflow desde el historial de git.
+
 ### Rediseno de la UI "estilo Roblox popular" + sonido y musica
 
 Pedido de producto: que la UI se parezca a la de los juegos populares de Roblox, con mas color y con sonido. La version anterior (pixel-art sobria, fuente Arcade, sin esquinas redondeadas) se leia bien pero no invitaba a jugar, y el juego era completamente mudo.
