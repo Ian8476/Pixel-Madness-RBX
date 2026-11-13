@@ -23,8 +23,14 @@ local Remotes = require(Shared:WaitForChild("Remotes"))
 local POPUP_LIFETIME_SECONDS = 0.7
 local RISE_STUDS = 6
 local HORIZONTAL_SCATTER_STUDS = 1.5
-local NORMAL_COLOR = Color3.fromRGB(255, 255, 255)
-local BIG_COLOR = Color3.fromRGB(255, 150, 40)
+local POP_IN_SECONDS = 0.12
+local POP_OVERSHOOT = 1.35
+-- Degradados de los numeros (claro arriba, oscuro abajo), como los titulos de la UI.
+local NORMAL_TOP = Color3.fromRGB(255, 255, 255)
+local NORMAL_BOTTOM = Color3.fromRGB(255, 226, 120)
+local BIG_TOP = Color3.fromRGB(255, 214, 51)
+local BIG_BOTTOM = Color3.fromRGB(255, 70, 40)
+local OUTLINE = Color3.fromRGB(18, 10, 36)
 
 local DamagePopups = {
 	name = "DamagePopups",
@@ -64,8 +70,10 @@ local function spawnPopup(position: Vector3, amount: number): ()
 	anchor.CastShadow = false
 	anchor.Position = position
 
+	local finalSize = UDim2.fromScale(4 * scale, 2 * scale)
+
 	local billboard = Instance.new("BillboardGui")
-	billboard.Size = UDim2.fromScale(4 * scale, 2 * scale)
+	billboard.Size = UDim2.fromScale(0.1, 0.1)
 	billboard.AlwaysOnTop = true
 	billboard.LightInfluence = 0
 	billboard.Parent = anchor
@@ -73,13 +81,25 @@ local function spawnPopup(position: Vector3, amount: number): ()
 	local label = Instance.new("TextLabel")
 	label.Size = UDim2.fromScale(1, 1)
 	label.BackgroundTransparency = 1
-	label.Font = Enum.Font.Arcade -- pixel de fabrica, sin subir una fuente propia
+	label.Font = Enum.Font.LuckiestGuy -- la fuente de titulos de la UI (ver Theme)
 	label.TextScaled = true
-	label.TextColor3 = if isBig then BIG_COLOR else NORMAL_COLOR
-	label.TextStrokeTransparency = 0
-	label.TextStrokeColor3 = Color3.new(0, 0, 0)
-	label.Text = tostring(math.round(amount))
+	label.TextColor3 = Color3.new(1, 1, 1)
+	label.Text = if isBig then tostring(math.round(amount)) .. "!" else tostring(math.round(amount))
+	label.Rotation = if isBig then (math.random() * 2 - 1) * 12 else 0
 	label.Parent = billboard
+
+	local gradient = Instance.new("UIGradient")
+	gradient.Color = if isBig
+		then ColorSequence.new(BIG_TOP, BIG_BOTTOM)
+		else ColorSequence.new(NORMAL_TOP, NORMAL_BOTTOM)
+	gradient.Rotation = 90
+	gradient.Parent = label
+
+	local stroke = Instance.new("UIStroke")
+	stroke.Color = OUTLINE
+	stroke.Thickness = if isBig then 3 else 2
+	stroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Contextual
+	stroke.Parent = label
 
 	anchor.Parent = getContainer()
 
@@ -92,8 +112,28 @@ local function spawnPopup(position: Vector3, amount: number): ()
 
 	local tweenInfo = TweenInfo.new(POPUP_LIFETIME_SECONDS, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
 
+	-- Entrada con sobrepaso ("pop") y despues sube desvaneciendose.
+	TweenService:Create(billboard, TweenInfo.new(POP_IN_SECONDS, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
+		Size = UDim2.fromScale(finalSize.X.Scale * POP_OVERSHOOT, finalSize.Y.Scale * POP_OVERSHOOT),
+	}):Play()
+
+	task.delay(POP_IN_SECONDS, function()
+		TweenService:Create(billboard, TweenInfo.new(0.15, Enum.EasingStyle.Quad), { Size = finalSize }):Play()
+	end)
+
 	TweenService:Create(anchor, tweenInfo, { Position = position + scatter }):Play()
-	TweenService:Create(label, tweenInfo, { TextTransparency = 1, TextStrokeTransparency = 1 }):Play()
+
+	local fadeInfo = TweenInfo.new(
+		POPUP_LIFETIME_SECONDS * 0.5,
+		Enum.EasingStyle.Quad,
+		Enum.EasingDirection.In,
+		0,
+		false,
+		POPUP_LIFETIME_SECONDS * 0.5
+	)
+
+	TweenService:Create(label, fadeInfo, { TextTransparency = 1 }):Play()
+	TweenService:Create(stroke, fadeInfo, { Transparency = 1 }):Play()
 
 	Debris:AddItem(anchor, POPUP_LIFETIME_SECONDS)
 end

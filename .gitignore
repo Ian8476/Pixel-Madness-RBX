@@ -12,6 +12,7 @@
 # Generados por herramientas
 sourcemap.json
 roblox.toml
+/build/
 
 # Sistema / editor
 .DS_Store

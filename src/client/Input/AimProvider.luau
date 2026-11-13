@@ -2,25 +2,36 @@
 --[[
 	AimProvider: donde esta apuntando el jugador, en coordenadas del mundo.
 
-	Metodo: interseccion analitica del rayo de camara con un plano horizontal a la
-	altura del pecho del personaje. NO se usa un raycast fisico contra el suelo.
+	CAMBIO DE METODO (camara de shooter). Antes la mira era el cursor: se intersectaba
+	el rayo del mouse con un plano horizontal a la altura del pecho. Con la camara en
+	tercera persona el cursor ya no existe - esta bloqueado en el centro de la pantalla
+	girando la camara -, asi que la mira pasa a ser lo que hay bajo el centro de la
+	pantalla, que es donde vive la cruz del HUD.
 
-	Por que el plano y no el raycast (traduccion de la decision del documento):
-	  - Es una division, no una consulta al motor de fisica: corre 60 veces por
-	    segundo por cliente sin costo medible.
-	  - No depende de que haya piso debajo del cursor. Con raycast, apuntar a un hueco
-	    de puerta, a un pozo o al vacio devuelve nil y el personaje se queda mirando
-	    al ultimo punto valido, que se siente roto.
-	  - El plano esta a la altura del pecho, o sea a la altura a la que salen las
-	    balas: lo que ves bajo el cursor es exactamente lo que va a recibir el disparo.
+	Metodo: un raycast desde la camara hacia adelante. El primer impacto es el punto de
+	mira; si no hay nada, se toma un punto lejano en la misma direccion.
 
-	Corre en prioridad Input, antes que la camara: la camara lee el aim de este frame
-	para su look-ahead, no el del frame anterior.
+	POR QUE EL RAYCAST Y NO LA DIRECCION DE LA CAMARA A SECAS: la camara esta corrida al
+	hombro. Disparar paralelo a ella tirarle a un par de studs al costado de lo que la
+	cruz esta tapando, y a 20 studs eso es fallar un enemigo entero. Apuntando al PUNTO
+	que la camara ve, la bala converge en la cruz, que es la unica promesa que el jugador
+	le pide a una mira.
+
+	La direccion se devuelve APLANADA (sin componente vertical) porque el
+	ProjectileSystem dispara en horizontal y el servidor de todas formas la aplana al
+	validarla: devolver una direccion inclinada seria prometer un disparo que el juego no
+	tiene. Mirar hacia arriba o hacia abajo encuadra, no apunta.
+
+	Corre despues de la camara y antes del giro del cuerpo: lee la camara de ESTE frame,
+	no la del anterior.
 ]]
 
 local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
-local UserInputService = game:GetService("UserInputService")
+
+local Shared = ReplicatedStorage:WaitForChild("Shared")
+local Constants = require(Shared:WaitForChild("Constants"))
 
 local BIND_NAME = "PixelMadnessAim"
 
@@ -30,7 +41,13 @@ local AimProvider = {
 
 local localPlayer = Players.LocalPlayer
 local aimDirection = Vector3.new(0, 0, 1)
-local aimPoint: Vector3? = nil
+
+-- El rayo ignora el cuerpo propio y nada mas: que un enemigo o un companero delante de
+-- la cruz atraigan el punto de mira es justamente lo que se busca. Balas, monedas y
+-- pickups no necesitan filtro porque nacen con `CanQuery = false`.
+local aimParams = RaycastParams.new()
+aimParams.FilterType = Enum.RaycastFilterType.Exclude
+aimParams.IgnoreWater = true
 
 local function getRootPart(): BasePart?
 	local character = localPlayer.Character
@@ -44,19 +61,10 @@ local function getRootPart(): BasePart?
 	return if root and root:IsA("BasePart") then root else nil
 end
 
---[[ Interseccion del rayo con el plano Y = planeHeight. nil si el rayo es paralelo o apunta al reves. ]]
-local function intersectHorizontalPlane(origin: Vector3, direction: Vector3, planeHeight: number): Vector3?
-	if math.abs(direction.Y) < 1e-4 then
-		return nil
-	end
+local function flatten(vector: Vector3): Vector3?
+	local flat = Vector3.new(vector.X, 0, vector.Z)
 
-	local distance = (planeHeight - origin.Y) / direction.Y
-
-	if distance < 0 then
-		return nil
-	end
-
-	return origin + direction * distance
+	return if flat.Magnitude > 1e-3 then flat.Unit else nil
 end
 
 local function update(): ()
@@ -67,25 +75,24 @@ local function update(): ()
 		return
 	end
 
-	-- GetMouseLocation y ViewportPointToRay comparten el mismo espacio (sin el inset
-	-- de la topbar). Mezclarlo con ScreenPointToRay desplaza la mira ~36 px hacia arriba.
-	local mouseLocation = UserInputService:GetMouseLocation()
-	local unitRay = camera:ViewportPointToRay(mouseLocation.X, mouseLocation.Y)
+	local origin = camera.CFrame.Position
+	local look = camera.CFrame.LookVector
 
-	local point = intersectHorizontalPlane(unitRay.Origin, unitRay.Direction, root.Position.Y)
+	local result = workspace:Raycast(origin, look * Constants.AIM_RAY_LENGTH_STUDS, aimParams)
+	local point = if result then result.Position else origin + look * Constants.AIM_RAY_LENGTH_STUDS
 
-	if not point then
-		return
-	end
+	-- Un punto demasiado cerca del jugador (la pared contra la que esta pegado, el piso
+	-- a sus pies) da una direccion que salta con cualquier movimiento: ahi manda la
+	-- camara, que gira de forma estable.
+	local converged = if (point - root.Position).Magnitude >= Constants.AIM_MIN_CONVERGENCE_STUDS
+		then flatten(point - root.Position)
+		else nil
 
-	aimPoint = point
+	local direction = converged or flatten(look)
 
-	local flat = Vector3.new(point.X - root.Position.X, 0, point.Z - root.Position.Z)
-
-	-- Cuando el cursor cae encima del personaje la direccion es degenerada:
-	-- se conserva la ultima valida en vez de dar un giro aleatorio.
-	if flat.Magnitude > 1e-3 then
-		aimDirection = flat.Unit
+	-- Sin direccion valida se conserva la ultima: un giro aleatorio se ve como un tic.
+	if direction then
+		aimDirection = direction
 	end
 end
 
@@ -93,12 +100,17 @@ function AimProvider.getAimDirection(): Vector3
 	return aimDirection
 end
 
-function AimProvider.getAimPoint(): Vector3?
-	return aimPoint
-end
-
 function AimProvider.start(): ()
-	RunService:BindToRenderStep(BIND_NAME, Enum.RenderPriority.Input.Value, update)
+	local function refreshFilter(): ()
+		local character = localPlayer.Character
+
+		aimParams.FilterDescendantsInstances = if character then { character } else {}
+	end
+
+	refreshFilter()
+	localPlayer.CharacterAdded:Connect(refreshFilter)
+
+	RunService:BindToRenderStep(BIND_NAME, Enum.RenderPriority.Camera.Value + 1, update)
 end
 
 return AimProvider

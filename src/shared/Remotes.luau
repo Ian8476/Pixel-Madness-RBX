@@ -17,10 +17,26 @@
 	| UseAbility           | C -> S    | cooldown, costo, vivo                           |
 	| SelectCharacter      | C -> S    | id existe, desbloqueado, fase = Lobby           |
 	| SetReady             | C -> S    | fase = Lobby                                    |
+	| RequestRestart       | C -> S    | la run tiene que estar terminada                |
 	| RunStateChanged      | S -> C    | -                                               |
 	| PlayerStatsChanged   | S -> dueno| -                                               |
+	| AbilityActivated     | S -> dueno| -                                               |
 	| DamageDealt          | S -> C    | unreliable, puro FX                             |
 	| FXEvent              | S -> C    | unreliable, puro FX                             |
+
+	AGREGADO EN FASE 2: `AbilityActivated`. No estaba en el contrato original del
+	documento de contexto, y se suma aca (y solo aca) por el Dash: el servidor valida,
+	cobra la energia y concede la invulnerabilidad, pero el IMPULSO lo aplica el
+	cliente, que es el dueno de red de su propio personaje. Esperar un round-trip para
+	moverse arruina justo la habilidad que mas depende del timing.
+
+	Va como remote CONFIABLE, no unreliable: perder este mensaje seria cobrarle la
+	energia a un jugador que no se movio.
+
+	AGREGADO EN FASE 4: `RequestRestart`, el boton de las pantallas de Victoria y
+	Derrota. El cliente solo puede PEDIR; el servidor comprueba que la run este de
+	verdad terminada, asi que nadie puede reiniciarle la partida al grupo a mitad del
+	piso 3. La Fase 5 le sumara el boton de Lobby cuando exista un lobby.
 
 	Los payloads viven tipados en Types.luau. Este modulo entrega el transporte;
 	la validacion es responsabilidad del servicio que escucha (SRP).
@@ -39,8 +55,10 @@ export type ReliableEventName =
 	| "UseAbility"
 	| "SelectCharacter"
 	| "SetReady"
+	| "RequestRestart"
 	| "RunStateChanged"
 	| "PlayerStatsChanged"
+	| "AbilityActivated"
 
 export type UnreliableEventName = "DamageDealt" | "FXEvent"
 
@@ -51,8 +69,10 @@ local RELIABLE_EVENTS: { ReliableEventName } = {
 	"UseAbility",
 	"SelectCharacter",
 	"SetReady",
+	"RequestRestart",
 	"RunStateChanged",
 	"PlayerStatsChanged",
+	"AbilityActivated",
 }
 
 -- Unreliable: FX puro. Si se pierde un paquete se pierde un popup de dano, no estado.
