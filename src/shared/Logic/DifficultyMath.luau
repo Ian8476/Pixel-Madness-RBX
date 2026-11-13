@@ -112,6 +112,29 @@ function DifficultyMath.scaledEnemyHealth(
 	return math.max(1, math.round(baseHealth * multiplier))
 end
 
+--[[
+	Cuantos enemigos spawnea una sala de combate: los del prefab mas los extra por piso
+	y por jugador.
+
+	Existe como funcion propia y no como una suma suelta en RoomService por el mismo
+	motivo que `scaledEnemyHealth`: si el redondeo y el minimo viven en dos lugares,
+	tarde o temprano dan distinto. El minimo de 1 es importante: una sala de combate
+	que spawnea cero enemigos se auto-limpia al instante y el jugador la cruza sin
+	entender que paso.
+]]
+function DifficultyMath.enemyCountForRoom(
+	baseCount: number,
+	floorNumber: number,
+	playerCount: number,
+	tuning: DifficultyTuning?
+): number
+	assertPositiveInteger(baseCount, "baseCount")
+
+	local extra = DifficultyMath.extraEnemiesPerRoom(floorNumber, playerCount, tuning)
+
+	return math.max(1, math.round(baseCount + extra))
+end
+
 --[[ Cantidad de salas del piso. Formula del documento: 7 + (piso - 1). ]]
 function DifficultyMath.roomCountForFloor(floorNumber: number, baseRoomCount: number): number
 	assertPositiveInteger(floorNumber, "floorNumber")

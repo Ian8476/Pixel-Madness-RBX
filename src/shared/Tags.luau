@@ -16,6 +16,7 @@ local Tags = table.freeze({
 	Boss = "Boss" :: "Boss",
 	Bullet = "Bullet" :: "Bullet",
 	Room = "Room" :: "Room",
+	Portal = "Portal" :: "Portal",
 	Coin = "Coin" :: "Coin",
 	WeaponPickup = "WeaponPickup" :: "WeaponPickup",
 	Breakable = "Breakable" :: "Breakable",
@@ -27,6 +28,7 @@ export type TagName =
 	| "Boss"
 	| "Bullet"
 	| "Room"
+	| "Portal"
 	| "Coin"
 	| "WeaponPickup"
 	| "Breakable"

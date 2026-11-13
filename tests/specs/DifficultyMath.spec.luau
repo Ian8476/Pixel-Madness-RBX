@@ -103,4 +103,28 @@ return function(api)
 			expect(DifficultyMath.roomCountForFloor(3, 7)).toBe(9)
 		end)
 	end)
+
+	describe("DifficultyMath.enemyCountForRoom", function()
+		it("en el piso 1 y en solitario spawnea la cantidad base", function()
+			expect(DifficultyMath.enemyCountForRoom(3, 1, 1)).toBe(3)
+		end)
+
+		it("suma un enemigo por piso y otro por jugador adicional", function()
+			expect(DifficultyMath.enemyCountForRoom(3, 3, 1)).toBe(5) -- 3 + 2 pisos
+			expect(DifficultyMath.enemyCountForRoom(3, 1, 4)).toBe(6) -- 3 + 3 jugadores
+			expect(DifficultyMath.enemyCountForRoom(3, 3, 4)).toBe(8) -- 3 + 2 + 3
+		end)
+
+		-- Una sala de combate con cero enemigos se auto-limpia al instante y el jugador
+		-- la cruza sin entender que paso.
+		it("nunca spawnea menos de un enemigo", function()
+			expect(DifficultyMath.enemyCountForRoom(1, 1, 1)).toBe(1)
+		end)
+
+		it("rechaza una cantidad base invalida", function()
+			expect(function()
+				DifficultyMath.enemyCountForRoom(0, 1, 1)
+			end).toThrow()
+		end)
+	end)
 end

@@ -6,6 +6,12 @@
 	(logica de input), el otro lo PINTA (presentacion). Cuando en la Fase 8 el giro
 	pase a interpolarse o a tener animacion de torso, se toca solo este archivo.
 
+	Con la camara de shooter el cuerpo mira SIEMPRE hacia donde mira la camara, tambien
+	cuando caminas de costado o hacia atras. Es lo contrario de lo que hace un personaje
+	de aventura y es lo correcto para apuntar: la mira esta en el centro de la pantalla,
+	y un cuerpo que se gira hacia donde camina dispararia a otro lado. El
+	`AutoRotate = false` que pone CharacterService es lo que deja hacerlo sin pelea.
+
 	Se escribe la CFrame directamente en vez de usar AlignOrientation porque el cliente
 	es dueno de red de su propio personaje: el cambio es inmediato y se replica solo.
 	Solo se toca la rotacion; la posicion la sigue mandando el Humanoid.
@@ -44,8 +50,8 @@ local function update(): ()
 end
 
 function CharacterFacing.start(): ()
-	-- Justo despues de AimProvider y antes de la camara.
-	RunService:BindToRenderStep(BIND_NAME, Enum.RenderPriority.Input.Value + 1, update)
+	-- Justo despues de AimProvider, que a su vez corre despues de la camara.
+	RunService:BindToRenderStep(BIND_NAME, Enum.RenderPriority.Camera.Value + 2, update)
 end
 
 return CharacterFacing

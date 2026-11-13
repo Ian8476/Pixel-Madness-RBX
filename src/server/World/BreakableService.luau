@@ -4,7 +4,7 @@
 
 	Es el ejemplo mas chico de la regla 4: el prefab no lleva scripts adentro. Se
 	construye una caja en Studio, se le pone el tag, se le pone el Attribute
-	`MaxHealth` si querés algo distinto del default, y el sistema la adopta desde
+	`MaxHealth` si queres algo distinto del default, y el sistema la adopta desde
 	afuera. Sirve igual para los muniecos de prueba de la Fase 1 que para los
 	barriles rompibles de las salas reales.
 ]]

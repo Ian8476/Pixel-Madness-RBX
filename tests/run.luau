@@ -15,6 +15,12 @@ local specs = {
 	require("./specs/Constants.spec"),
 	require("./specs/DifficultyMath.spec"),
 	require("./specs/SpreadMath.spec"),
+	require("./specs/ContentSchema.spec"),
+	require("./specs/ContentData.spec"),
+	require("./specs/Rng.spec"),
+	require("./specs/DungeonLayout.spec"),
+	require("./specs/EnemyTactics.spec"),
+	require("./specs/LobbyRules.spec"),
 }
 
 print("PixelMadness :: tests de logica pura\n")
